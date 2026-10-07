@@ -26,6 +26,7 @@ const RTL_LANGS = ['ur', 'fa'];
 let extraIso = '';          // '' = off
 let curExtra = null;        // map { ayahNumber: [gloss per word] } for current surah+lang
 const extraCache = {};      // key `${iso}:${surahId}` -> map
+let lastActive = -1;        // last highlighted word index (for auto-scroll)
 
 async function loadExtra(iso, surahId) {
   const key = `${iso}:${surahId}`;
@@ -131,6 +132,7 @@ function renderAyah() {
   el('ayahIndicator').textContent = `${ay.ayah}/${c.verses_count}`;
   setCurExtra();
   renderVerse(ay.words);
+  lastActive = -1;
   setAudio(ay);
   paintHighlight(0);
 }
@@ -145,15 +147,22 @@ function state(w, ms) {
 function paintHighlight(ms) {
   const words = data.ayat[idx].words;
   const units = el('verse').children;
+  let active = -1;
   for (let i = 0; i < words.length; i++) {
     const st = state(words[i], ms);
     const u = units[i];
+    if (st === 'active') active = i;
     if (u.dataset.st !== st) {
       u.classList.remove('past', 'active');
       if (st !== 'future') u.classList.add(st);
       u.dataset.st = st;
     }
   }
+  // auto-scroll: keep the current word centered (only on change, while playing)
+  if (active !== -1 && active !== lastActive && wantPlaying) {
+    units[active].scrollIntoView({ block: 'center', behavior: 'smooth' });
+  }
+  if (active !== -1) lastActive = active;
 }
 function tick() {
   paintHighlight(audio.currentTime * 1000);
