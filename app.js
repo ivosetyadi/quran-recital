@@ -31,17 +31,8 @@ let lastActive = -1;        // last highlighted word index (for auto-scroll)
 async function loadExtra(iso, surahId) {
   const key = `${iso}:${surahId}`;
   if (extraCache[key]) return extraCache[key];
-  const map = {};
-  let page = 1;
-  while (true) {
-    const url = `https://api.quran.com/api/v4/verses/by_chapter/${surahId}?words=true&language=${iso}&word_fields=text_uthmani&per_page=50&page=${page}`;
-    const d = await (await fetch(url)).json();
-    d.verses.forEach((v) => {
-      map[v.verse_number] = v.words.filter((w) => w.char_type_name === 'word').map((w) => w.translation?.text || '');
-    });
-    if (!d.pagination || !d.pagination.next_page) break;
-    page = d.pagination.next_page;
-  }
+  // pre-hosted locally: data/wbw/{iso}/{NNN}.json = { "<ayah>": [gloss...] } — instant, no API
+  const map = await (await fetch(`data/wbw/${iso}/${pad3(surahId)}.json`)).json();
   extraCache[key] = map;
   return map;
 }
@@ -50,15 +41,22 @@ function setCurExtra() {
 }
 
 // ---------- data ----------
+let SURAHS = []; // [{id,name}] from manifest
+
 async function loadManifest() {
-  const list = await (await fetch('data/manifest.json')).json();
+  SURAHS = await (await fetch('data/manifest.json')).json();
   const sel = el('surahSelect');
+  const dl = el('surahList');
   sel.innerHTML = '';
-  list.forEach((s) => {
+  dl.innerHTML = '';
+  SURAHS.forEach((s) => {
     const o = document.createElement('option');
     o.value = s.id;
     o.textContent = `${s.id}. ${s.name}`;
     sel.appendChild(o);
+    const d = document.createElement('option'); // datalist entry for search
+    d.value = `${s.id}. ${s.name}`;
+    dl.appendChild(d);
   });
 }
 
@@ -197,16 +195,18 @@ function seekToWord(i) {
   if (w.start != null) { audio.currentTime = w.start / 1000; play(); }
 }
 
-// ---------- hash routing (#/surah/ayah) ----------
+// ---------- hash routing (#/surah/ayah[/lang]) ----------
 function updateHash() {
-  history.replaceState(null, '', `#/${data.chapter.id}/${data.ayat[idx].ayah}`);
+  const base = `#/${data.chapter.id}/${data.ayat[idx].ayah}`;
+  history.replaceState(null, '', extraIso ? `${base}/${extraIso}` : base);
+}
+function parseHash() {
+  const m = location.hash.match(/#\/(\d+)\/(\d+)(?:\/([a-z]+))?/i);
+  return m ? { surah: +m[1], ayah: +m[2], lang: (m[3] || '').toLowerCase() } : null;
 }
 function readHash() {
-  const m = location.hash.match(/#\/(\d+)\/(\d+)/);
-  if (m) {
-    const found = data.ayat.findIndex((x) => x.ayah === parseInt(m[2], 10));
-    if (found >= 0) idx = found;
-  }
+  const h = parseHash();
+  if (h) { const f = data.ayat.findIndex((x) => x.ayah === h.ayah); if (f >= 0) idx = f; }
 }
 
 // ---------- init ----------
@@ -222,6 +222,14 @@ async function init() {
   await loadManifest();
 
   el('surahSelect').addEventListener('change', (e) => openSurah(parseInt(e.target.value, 10), false));
+  el('surahSearch').addEventListener('change', (e) => {
+    const v = e.target.value.trim();
+    if (!v) return;
+    let s = SURAHS.find((x) => `${x.id}. ${x.name}`.toLowerCase() === v.toLowerCase())
+      || SURAHS.find((x) => x.name.toLowerCase().includes(v.toLowerCase()));
+    if (!s && /^\d+$/.test(v)) s = SURAHS.find((x) => x.id === +v);
+    if (s) { e.target.value = ''; openSurah(s.id, false); }
+  });
   el('playBtn').addEventListener('click', togglePlay);
   el('prevBtn').addEventListener('click', () => goAyah(idx - 1, wantPlaying));
   el('nextBtn').addEventListener('click', () => goAyah(idx + 1, wantPlaying));
@@ -229,21 +237,24 @@ async function init() {
     audio.playbackRate = parseFloat(el('speedSelect').value);
   });
 
-  // extra translation (live from Quran.com API)
+  // extra translation (pre-hosted locally in data/wbw/)
   const langSel = el('extraLang');
+  let langs = EXTRA_LANGS;
+  try { langs = await (await fetch('data/wbw/langs.json')).json(); } catch {}
   langSel.innerHTML = '<option value="">— language —</option>' +
-    EXTRA_LANGS.map((l) => `<option value="${l.iso}">${l.name}</option>`).join('');
+    langs.map((l) => `<option value="${l.iso}">${l.name}</option>`).join('');
   el('extraToggle').addEventListener('change', async (e) => {
     langSel.disabled = !e.target.checked;
-    if (!e.target.checked) { extraIso = ''; setCurExtra(); renderAyah(); return; }
+    if (!e.target.checked) { extraIso = ''; setCurExtra(); renderAyah(); updateHash(); return; }
     if (langSel.value) langSel.dispatchEvent(new Event('change'));
   });
   langSel.addEventListener('change', async () => {
     extraIso = langSel.value;
-    if (!extraIso) { setCurExtra(); renderAyah(); return; }
+    if (!extraIso) { setCurExtra(); renderAyah(); updateHash(); return; }
     try { await loadExtra(extraIso, data.chapter.id); } catch {}
     setCurExtra();
     renderAyah();
+    updateHash();
   });
 
   audio.addEventListener('ended', () => {
@@ -258,11 +269,19 @@ async function init() {
     if (nextId <= 114) openSurah(nextId, true);
   });
 
-  // initial surah from hash (#/s/a) or default to first in manifest
-  const m = location.hash.match(/#\/(\d+)\/(\d+)/);
+  // initial load from hash (#/s/a[/lang]) or default
+  const h = parseHash();
   const first = parseInt(el('surahSelect').value, 10) || 1;
-  await loadSurah(m ? parseInt(m[1], 10) : first);
+  const startSurah = h ? h.surah : first;
+  await loadSurah(startSurah);
   readHash();
+  if (h && h.lang && Array.from(langSel.options).some((o) => o.value === h.lang)) {
+    el('extraToggle').checked = true;
+    langSel.disabled = false;
+    langSel.value = h.lang;
+    extraIso = h.lang;
+    try { await loadExtra(extraIso, startSurah); } catch {}
+  }
   renderAyah();
 }
 

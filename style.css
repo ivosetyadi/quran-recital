@@ -40,6 +40,17 @@ body {
   margin-bottom: 28px;
 }
 .brand { font-size: 15px; letter-spacing: 1px; color: #9fb9c2; text-transform: uppercase; }
+.picker { display: flex; gap: 8px; align-items: center; }
+.surah-search {
+  background: rgba(255,255,255,0.06);
+  color: #fff;
+  border: 1px solid rgba(255,207,77,0.25);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 15px;
+  width: 150px;
+}
+.surah-search::placeholder { color: #6d868f; }
 .surah-select {
   background: rgba(255,255,255,0.06);
   color: #fff;
