@@ -176,11 +176,13 @@ async function init() {
   audio.addEventListener('ended', () => {
     if (el('repeatAyah').checked) { audio.currentTime = 0; play(); return; }
     pause();
-    if (!el('autoAdvance').checked) return;
+    const advance = el('autoAdvance').checked || el('repeatSurah').checked;
+    if (!advance) return;
     if (idx < data.ayat.length - 1) { goAyah(idx + 1, true); return; }
-    // end of surah → continue into the next surah (1..114)
-    const nextId = data.chapter.id + 1;
-    if (nextId <= 114) openSurah(nextId, true);
+    // end of surah
+    if (el('repeatSurah').checked) { goAyah(0, true); return; }      // loop this surah
+    const nextId = data.chapter.id + 1;                               // else continue to next
+    if (el('autoAdvance').checked && nextId <= 114) openSurah(nextId, true);
   });
 
   // initial surah from hash (#/s/a) or default to first in manifest
