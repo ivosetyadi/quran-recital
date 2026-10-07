@@ -13,6 +13,10 @@
   --en-active: #ffcf4d;
   --en-past: #aebfc6;
   --en-future: #56707b;
+  /* tajweed */
+  --tj-grey: #9aa7ad; --tj-silent: #6b7a80;
+  --tj-madd2: #f0a35e; --tj-madd45: #f2b84b; --tj-maddob: #ff5d5d; --tj-madd6: #e53935;
+  --tj-ghunnah: #49c46d; --tj-ikhfa: #2bb3c0; --tj-qalqalah: #4a9df0; --tj-iqlab: #b08be0;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -116,6 +120,26 @@ body {
 .w.active .tr { color: var(--cream); font-weight: 600; }
 .w.active .en { color: var(--en-active); font-weight: 700; }
 .w.active .qul { color: var(--cream); font-weight: 600; }
+
+/* ---- tajweed mode: colour letters by rule; active word is boxed (colours preserved) ---- */
+.verse.tajweed .w .ar, .verse.tajweed .w.past .ar { color: #eaf2f4; text-shadow: none; }
+.verse.tajweed .w.active { background: rgba(255,207,77,.13); border-radius: 12px; box-shadow: 0 0 0 2px rgba(255,207,77,.4), 0 0 22px rgba(255,207,77,.22); }
+.verse.tajweed .w.active .ar { color: #eaf2f4; text-shadow: none; }
+.verse.tajweed .ar rule.ham_wasl, .verse.tajweed .ar rule.laam_shamsiyah, .verse.tajweed .ar rule.idgham_wo_ghunnah { color: var(--tj-grey); }
+.verse.tajweed .ar rule.slnt { color: var(--tj-silent); }
+.verse.tajweed .ar rule.madda_normal { color: var(--tj-madd2); }
+.verse.tajweed .ar rule.madda_permissible { color: var(--tj-madd45); }
+.verse.tajweed .ar rule.madda_obligatory { color: var(--tj-maddob); }
+.verse.tajweed .ar rule.madda_necessary { color: var(--tj-madd6); }
+.verse.tajweed .ar rule.ghunnah, .verse.tajweed .ar rule.idgham_ghunnah { color: var(--tj-ghunnah); }
+.verse.tajweed .ar rule.ikhafa, .verse.tajweed .ar rule.ikhafa_shafawi { color: var(--tj-ikhfa); }
+.verse.tajweed .ar rule.qalqalah { color: var(--tj-qalqalah); }
+.verse.tajweed .ar rule.iqlab, .verse.tajweed .ar rule.idgham_shafawi, .verse.tajweed .ar rule.idgham_mutajanisayn, .verse.tajweed .ar rule.idgham_mutaqaribayn { color: var(--tj-iqlab); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 7px 14px; justify-content: center; margin: 0 0 14px; font-size: 12px; color: #cdd9dd; }
+.legend[hidden] { display: none; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+.legend .dot { width: 11px; height: 11px; border-radius: 3px; display: inline-block; }
 
 .credit { text-align: center; font-size: 13px; color: rgba(255,255,255,.4); letter-spacing: .5px; margin-top: 30px; }
 

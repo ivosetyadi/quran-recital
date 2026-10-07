@@ -38,6 +38,23 @@ let curExtra = null;        // map { ayahNumber: [gloss per word] } for current 
 const extraCache = {};      // key `${iso}:${surahId}` -> map
 let lastActive = -1;        // last highlighted word index (for auto-scroll)
 
+// tajweed colors (per-word tajweed HTML, pre-hosted in data/tajweed/)
+let tajOn = false;
+let curTaj = null;          // map { ayahNumber: [tajweed html per word] } for current surah
+const tajCache = {};        // surahId -> map
+async function loadTajweed(surahId) {
+  if (tajCache[surahId]) return tajCache[surahId];
+  showLoading();
+  try {
+    const m = await (await fetch(`data/tajweed/${pad3(surahId)}.json`)).json();
+    tajCache[surahId] = m;
+    return m;
+  } finally { hideLoading(); }
+}
+function setCurTaj() {
+  curTaj = tajOn && data ? (tajCache[data.chapter.id] || null) : null;
+}
+
 async function loadExtra(iso, surahId) {
   const key = `${iso}:${surahId}`;
   if (extraCache[key]) return extraCache[key];
@@ -116,13 +133,19 @@ audio.addEventListener('error', () => tryNextCdn());
 function renderVerse(words) {
   const v = el('verse');
   v.innerHTML = '';
+  v.classList.toggle('tajweed', !!curTaj);
   const ayahNo = data.ayat[idx].ayah;
   const extra = curExtra && curExtra[ayahNo];
+  const taj = curTaj && curTaj[ayahNo];
   const extraRtl = RTL_LANGS.includes(extraIso);
   words.forEach((w, i) => {
     const u = document.createElement('div');
     u.className = 'w';
-    for (const [cls, val] of [['ar', w.ar], ['tr', w.tr], ['en', w.en]]) {
+    const ar = document.createElement('div');
+    ar.className = 'ar';
+    if (taj && taj[i]) ar.innerHTML = taj[i]; else ar.textContent = w.ar;
+    u.appendChild(ar);
+    for (const [cls, val] of [['tr', w.tr], ['en', w.en]]) {
       const d = document.createElement('div');
       d.className = cls;
       d.textContent = val;
@@ -147,6 +170,7 @@ function renderAyah() {
   el('headerEn').textContent = `${c.id} · ${c.name_simple} · Verse ${ay.ayah}`;
   el('ayahIndicator').textContent = `${ay.ayah}/${c.verses_count}`;
   setCurExtra();
+  setCurTaj();
   renderVerse(ay.words);
   lastActive = -1;
   setAudio(ay);
@@ -224,14 +248,20 @@ function seekToWord(i) {
   if (w.start != null) { audio.currentTime = w.start / 1000; play(); }
 }
 
-// ---------- hash routing (#/surah/ayah[/lang]) ----------
+// ---------- hash routing (#/surah/ayah[/lang][?taj=1]) ----------
 function updateHash() {
-  const base = `#/${data.chapter.id}/${data.ayat[idx].ayah}`;
-  history.replaceState(null, '', extraIso ? `${base}/${extraIso}` : base);
+  let h = `#/${data.chapter.id}/${data.ayat[idx].ayah}`;
+  if (extraIso) h += `/${extraIso}`;
+  if (tajOn) h += '?taj=1';
+  history.replaceState(null, '', h);
 }
 function parseHash() {
-  const m = location.hash.match(/#\/(\d+)\/(\d+)(?:\/([a-z]+))?/i);
-  return m ? { surah: +m[1], ayah: +m[2], lang: (m[3] || '').toLowerCase() } : null;
+  const raw = location.hash.replace(/^#/, '');
+  const [pathPart, queryPart] = raw.split('?');
+  const m = pathPart.match(/^\/(\d+)\/(\d+)(?:\/([a-z]+))?/i);
+  if (!m) return null;
+  const q = new URLSearchParams(queryPart || '');
+  return { surah: +m[1], ayah: +m[2], lang: (m[3] || '').toLowerCase(), taj: q.get('taj') === '1' };
 }
 function readHash() {
   const h = parseHash();
@@ -242,6 +272,7 @@ function readHash() {
 async function openSurah(surahId, autoplay) {
   await loadSurah(surahId);
   if (extraIso) { try { await loadExtra(extraIso, surahId); } catch {} }
+  if (tajOn) { try { await loadTajweed(surahId); } catch {} }
   renderAyah();
   updateHash();
   if (autoplay) play();
@@ -288,6 +319,24 @@ async function init() {
     updateHash();
   });
 
+  // tajweed colors
+  const TAJ_LEGEND = [
+    ['Ghunnah / Idgham', 'var(--tj-ghunnah)'], ['Ikhfa', 'var(--tj-ikhfa)'],
+    ['Qalqalah', 'var(--tj-qalqalah)'], ['Iqlab / Idgham Shafawi', 'var(--tj-iqlab)'],
+    ['Madd 2', 'var(--tj-madd2)'], ['Madd 4-5', 'var(--tj-madd45)'],
+    ['Madd obligatory', 'var(--tj-maddob)'], ['Madd 6', 'var(--tj-madd6)'],
+    ['Silent / Hamzat wasl / Lam shamsiyyah', 'var(--tj-grey)'],
+  ];
+  el('tajLegend').innerHTML = TAJ_LEGEND.map(([t, c]) => `<span><i class="dot" style="background:${c}"></i>${t}</span>`).join('');
+  el('tajToggle').addEventListener('change', async (e) => {
+    tajOn = e.target.checked;
+    el('tajLegend').hidden = !tajOn;
+    if (tajOn) { try { await loadTajweed(data.chapter.id); } catch {} }
+    setCurTaj();
+    renderAyah();
+    updateHash();
+  });
+
   audio.addEventListener('ended', () => {
     const mode = el('playMode').value;
     if (mode === 'repeat-ayah') { audio.currentTime = 0; play(); return; }
@@ -311,6 +360,12 @@ async function init() {
     langSel.value = h.lang;
     extraIso = h.lang;
     try { await loadExtra(extraIso, startSurah); } catch {}
+  }
+  if (h && h.taj) {
+    el('tajToggle').checked = true;
+    tajOn = true;
+    el('tajLegend').hidden = false;
+    try { await loadTajweed(startSurah); } catch {}
   }
   renderAyah();
 }
