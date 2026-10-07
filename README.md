@@ -8,7 +8,7 @@ learning and memorization (hifz).
 Click play on a surah and the page recites it slowly, lighting up each word as it's read.
 Tap any word to jump to it. All 114 surahs. No app, no download — it runs in the browser.
 
-**Live:** https://ivosetyadi.github.io/quran-recital/#/2/282/id?taj=1
+**Live:** https://ivosetyadi.github.io/quran-recital/#/2/282/id
 
 ![Quran Recital — Slow Step: interlinear word-by-word with Indonesian translation](docs/screenshot.png)
 
