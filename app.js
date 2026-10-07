@@ -53,7 +53,7 @@ function setAudio(ay) {
 audio.addEventListener('error', () => {
   if (cdnIdx < curUrls.length - 1) {
     cdnIdx++;
-    console.warn('audio CDN gagal, coba berikutnya:', curUrls[cdnIdx]);
+    console.warn('audio CDN failed, trying next:', curUrls[cdnIdx]);
     const at = audio.currentTime || 0;
     audio.src = curUrls[cdnIdx];
     audio.load();
