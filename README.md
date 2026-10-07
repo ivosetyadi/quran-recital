@@ -9,6 +9,8 @@ Tap any word to jump to it. All 114 surahs. No app, no download — it runs in t
 
 **Live:** https://ivosetyadi.github.io/quran-recital/
 
+![Quran Recital — Slow Step: interlinear word-by-word with Indonesian extra translation](docs/screenshot.png)
+
 ## Features
 - Interlinear word-by-word highlight (Arabic + transliteration + meaning) synced to the audio
 - Optional **extra per-word translation** (Indonesian, Urdu, Bengali, Turkish, Persian, Hindi,
