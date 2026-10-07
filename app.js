@@ -1,4 +1,9 @@
-// Quran Recital — Slow Step. Vanilla JS: play audio (CDN, with fallback) + word highlight.
+/*!
+ * Quran Recital — Slow Step
+ * Copyright (c) 2026 Ivo Setyadi — MIT License (see LICENSE)
+ * https://github.com/ivosetyadi/quran-recital
+ * Vanilla JS: play audio (CDN, with fallback) + word-by-word highlight.
+ */
 'use strict';
 
 const AR_DIGITS = ['٠','١','٢','٣','٤','٥','٦','٧','٨','٩'];
@@ -7,6 +12,11 @@ const pad3 = (n) => String(n).padStart(3, '0');
 
 const el = (id) => document.getElementById(id);
 const audio = el('audio');
+
+// loading indicator (shown during real network fetches, hidden when done)
+let loadingCount = 0;
+function showLoading() { loadingCount++; el('loading').hidden = false; }
+function hideLoading() { loadingCount = Math.max(0, loadingCount - 1); if (loadingCount === 0) el('loading').hidden = true; }
 
 let data = null;      // current surah data
 let idx = 0;          // current ayah index
@@ -32,9 +42,12 @@ async function loadExtra(iso, surahId) {
   const key = `${iso}:${surahId}`;
   if (extraCache[key]) return extraCache[key];
   // pre-hosted locally: data/wbw/{iso}/{NNN}.json = { "<ayah>": [gloss...] } — instant, no API
-  const map = await (await fetch(`data/wbw/${iso}/${pad3(surahId)}.json`)).json();
-  extraCache[key] = map;
-  return map;
+  showLoading();
+  try {
+    const map = await (await fetch(`data/wbw/${iso}/${pad3(surahId)}.json`)).json();
+    extraCache[key] = map;
+    return map;
+  } finally { hideLoading(); }
 }
 function setCurExtra() {
   curExtra = extraIso && data ? (extraCache[`${extraIso}:${data.chapter.id}`] || null) : null;
@@ -61,10 +74,13 @@ async function loadManifest() {
 }
 
 async function loadSurah(surahId) {
-  data = await (await fetch(`data/${pad3(surahId)}.json`)).json();
-  idx = 0;
-  el('credit').textContent = 'Recited by ' + data.reciter;
-  el('surahSelect').value = surahId;
+  showLoading();
+  try {
+    data = await (await fetch(`data/${pad3(surahId)}.json`)).json();
+    idx = 0;
+    el('credit').textContent = 'Recited by ' + data.reciter;
+    el('surahSelect').value = surahId;
+  } finally { hideLoading(); }
 }
 
 // ---------- audio with CDN fallback ----------

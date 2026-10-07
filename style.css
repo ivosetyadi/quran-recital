@@ -1,3 +1,8 @@
+/*!
+ * Quran Recital — Slow Step
+ * Copyright (c) 2026 Ivo Setyadi — MIT License (see LICENSE)
+ * https://github.com/ivosetyadi/quran-recital
+ */
 :root {
   --gold: #ffcf4d;
   --cream: #ffe9b0;
@@ -140,6 +145,20 @@ body {
 }
 .controls button:hover { background: rgba(255,207,77,0.2); }
 .controls button.play { width: 64px; height: 64px; font-size: 26px; background: rgba(255,207,77,0.18); }
+.loading {
+  position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 10px; z-index: 50;
+  background: rgba(6,19,25,.92); border: 1px solid rgba(255,207,77,.3);
+  color: var(--gold); padding: 12px 20px; border-radius: 12px; font-size: 14px;
+}
+.loading[hidden] { display: none; }
+.loading::before {
+  content: ''; width: 16px; height: 16px; border-radius: 50%;
+  border: 2px solid rgba(255,207,77,.3); border-top-color: var(--gold);
+  animation: spin .7s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
 .ayah-indicator { font-size: 15px; color: #9fb9c2; min-width: 48px; text-align: center; }
 .auto { font-size: 13px; color: #9fb9c2; display: flex; align-items: center; gap: 5px; }
 .speed, .mode { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,207,77,0.25); border-radius: 8px; padding: 6px 8px; }
