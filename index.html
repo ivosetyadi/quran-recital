@@ -23,11 +23,7 @@
       <div class="header-en" id="headerEn"></div>
     </div>
 
-    <div class="reading" id="reading">
-      <div class="arabic" id="arabic" dir="rtl"></div>
-      <div class="translit" id="translit"></div>
-      <div class="english" id="english"></div>
-    </div>
+    <div class="verse" id="verse" dir="rtl"></div>
 
     <div class="credit" id="credit"></div>
   </main>
@@ -37,9 +33,12 @@
     <button id="playBtn" class="play" title="Play / Pause" aria-label="Play">▶</button>
     <button id="nextBtn" title="Next ayah" aria-label="Next">⏭</button>
     <span class="ayah-indicator" id="ayahIndicator">–</span>
-    <label class="auto"><input type="checkbox" id="repeatAyah" /> repeat ayah</label>
-    <label class="auto"><input type="checkbox" id="repeatSurah" /> repeat surah</label>
-    <label class="auto"><input type="checkbox" id="autoAdvance" checked /> auto-advance</label>
+    <select id="playMode" class="mode" aria-label="Playback mode">
+      <option value="advance" selected>Continuous</option>
+      <option value="repeat-ayah">Repeat ayah</option>
+      <option value="repeat-surah">Repeat surah</option>
+      <option value="stop">Stop after ayah</option>
+    </select>
     <select id="speedSelect" class="speed" aria-label="Speed">
       <option value="0.75">0.75×</option>
       <option value="1" selected>1×</option>

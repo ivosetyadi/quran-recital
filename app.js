@@ -62,15 +62,21 @@ audio.addEventListener('error', () => {
   }
 });
 
-// ---------- render ----------
-function wordSpans(container, words, key) {
-  container.innerHTML = '';
+// ---------- render (interlinear: each word is a column Arabic/translit/meaning) ----------
+function renderVerse(words) {
+  const v = el('verse');
+  v.innerHTML = '';
   words.forEach((w, i) => {
-    const s = document.createElement('span');
-    s.className = 'word';
-    s.textContent = w[key];
-    s.addEventListener('click', () => seekToWord(i));
-    container.appendChild(s);
+    const u = document.createElement('div');
+    u.className = 'w';
+    for (const [cls, val] of [['ar', w.ar], ['tr', w.tr], ['en', w.en]]) {
+      const d = document.createElement('div');
+      d.className = cls;
+      d.textContent = val;
+      u.appendChild(d);
+    }
+    u.addEventListener('click', () => seekToWord(i));
+    v.appendChild(u);
   });
 }
 
@@ -80,9 +86,7 @@ function renderAyah() {
   el('headerAr').textContent = `${toArabic(c.id)} · ${c.name_arabic} · آية ${toArabic(ay.ayah)}`;
   el('headerEn').textContent = `${c.id} · ${c.name_simple} · Verse ${ay.ayah}`;
   el('ayahIndicator').textContent = `${ay.ayah}/${c.verses_count}`;
-  wordSpans(el('arabic'), ay.words, 'ar');
-  wordSpans(el('translit'), ay.words, 'tr');
-  wordSpans(el('english'), ay.words, 'en');
+  renderVerse(ay.words);
   setAudio(ay);
   paintHighlight(0);
 }
@@ -96,18 +100,16 @@ function state(w, ms) {
 }
 function paintHighlight(ms) {
   const words = data.ayat[idx].words;
-  [el('arabic'), el('translit'), el('english')].forEach((layer) => {
-    const spans = layer.children;
-    for (let i = 0; i < words.length; i++) {
-      const st = state(words[i], ms);
-      const sp = spans[i];
-      if (sp.dataset.st !== st) {
-        sp.classList.remove('past', 'active');
-        if (st !== 'future') sp.classList.add(st);
-        sp.dataset.st = st;
-      }
+  const units = el('verse').children;
+  for (let i = 0; i < words.length; i++) {
+    const st = state(words[i], ms);
+    const u = units[i];
+    if (u.dataset.st !== st) {
+      u.classList.remove('past', 'active');
+      if (st !== 'future') u.classList.add(st);
+      u.dataset.st = st;
     }
-  });
+  }
 }
 function tick() {
   paintHighlight(audio.currentTime * 1000);
@@ -174,15 +176,15 @@ async function init() {
   });
 
   audio.addEventListener('ended', () => {
-    if (el('repeatAyah').checked) { audio.currentTime = 0; play(); return; }
+    const mode = el('playMode').value;
+    if (mode === 'repeat-ayah') { audio.currentTime = 0; play(); return; }
     pause();
-    const advance = el('autoAdvance').checked || el('repeatSurah').checked;
-    if (!advance) return;
+    if (mode === 'stop') return;
     if (idx < data.ayat.length - 1) { goAyah(idx + 1, true); return; }
     // end of surah
-    if (el('repeatSurah').checked) { goAyah(0, true); return; }      // loop this surah
-    const nextId = data.chapter.id + 1;                               // else continue to next
-    if (el('autoAdvance').checked && nextId <= 114) openSurah(nextId, true);
+    if (mode === 'repeat-surah') { goAyah(0, true); return; }
+    const nextId = data.chapter.id + 1; // 'advance' (Continuous) → next surah
+    if (nextId <= 114) openSurah(nextId, true);
   });
 
   // initial surah from hash (#/s/a) or default to first in manifest
