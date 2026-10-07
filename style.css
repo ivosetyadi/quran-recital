@@ -53,6 +53,11 @@ body {
 .tagline strong { color: var(--gold); }
 .tagline .id { color: #6d868f; }
 
+.opts { display: flex; justify-content: center; align-items: center; gap: 10px; margin: 0 0 18px; font-size: 13px; color: #9fb9c2; flex-wrap: wrap; }
+.opts .chk { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+.opts select { font-size: 13px; padding: 5px 8px; }
+.opts select:disabled { opacity: .5; }
+
 .header { text-align: center; margin: 8px 0 34px; }
 .header-ar {
   font-family: "Amiri", serif;
@@ -86,12 +91,15 @@ body {
 .w .ar { font-family: "Amiri Quran", serif; font-size: clamp(32px, 8vw, 58px); line-height: 1.7; padding-bottom: 2px; color: var(--ar-future); transition: color .1s linear; }
 .w .tr { direction: ltr; font-style: italic; font-size: clamp(13px, 2.8vw, 18px); color: var(--tr-future); transition: color .1s linear; }
 .w .en { direction: ltr; font-size: clamp(12px, 2.5vw, 16px); text-align: center; line-height: 1.3; color: var(--en-future); transition: color .1s linear; }
+.w .qul { font-size: clamp(12px, 2.5vw, 16px); text-align: center; line-height: 1.4; color: var(--tr-future); transition: color .1s linear; }
 .w.past .ar { color: var(--ar-past); }
 .w.past .tr { color: var(--tr-past); }
 .w.past .en { color: var(--en-past); }
+.w.past .qul { color: var(--tr-past); }
 .w.active .ar { color: var(--gold); text-shadow: 0 0 28px rgba(255,207,77,.55); }
 .w.active .tr { color: var(--cream); font-weight: 600; }
 .w.active .en { color: var(--en-active); font-weight: 700; }
+.w.active .qul { color: var(--cream); font-weight: 600; }
 
 .credit { text-align: center; font-size: 13px; color: rgba(255,255,255,.4); letter-spacing: .5px; margin-top: 30px; }
 

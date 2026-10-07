@@ -11,6 +11,8 @@ Tap any word to jump to it. All 114 surahs. No app, no download — it runs in t
 
 ## Features
 - Interlinear word-by-word highlight (Arabic + transliteration + meaning) synced to the audio
+- Optional **extra per-word translation** (Indonesian, Urdu, Bengali, Turkish, Persian, Hindi,
+  Tamil) — shown as a 4th line under each word, fetched live from the Quran.com API
 - All 114 surahs
 - Tap a word to jump & replay from there
 - Previous / next ayah
