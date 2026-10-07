@@ -58,19 +58,18 @@ let SURAHS = []; // [{id,name}] from manifest
 
 async function loadManifest() {
   SURAHS = await (await fetch('data/manifest.json')).json();
-  const sel = el('surahSelect');
   const dl = el('surahList');
-  sel.innerHTML = '';
   dl.innerHTML = '';
   SURAHS.forEach((s) => {
-    const o = document.createElement('option');
-    o.value = s.id;
-    o.textContent = `${s.id}. ${s.name}`;
-    sel.appendChild(o);
-    const d = document.createElement('option'); // datalist entry for search
+    const d = document.createElement('option');
     d.value = `${s.id}. ${s.name}`;
     dl.appendChild(d);
   });
+}
+
+// the picker input doubles as the "current surah" display
+function setPickerLabel() {
+  if (data) el('surahSearch').value = `${data.chapter.id}. ${data.chapter.name_simple}`;
 }
 
 async function loadSurah(surahId) {
@@ -79,7 +78,7 @@ async function loadSurah(surahId) {
     data = await (await fetch(`data/${pad3(surahId)}.json`)).json();
     idx = 0;
     el('credit').textContent = 'Recited by ' + data.reciter;
-    el('surahSelect').value = surahId;
+    setPickerLabel();
   } finally { hideLoading(); }
 }
 
@@ -237,14 +236,16 @@ async function openSurah(surahId, autoplay) {
 async function init() {
   await loadManifest();
 
-  el('surahSelect').addEventListener('change', (e) => openSurah(parseInt(e.target.value, 10), false));
-  el('surahSearch').addEventListener('change', (e) => {
-    const v = e.target.value.trim();
-    if (!v) return;
+  // single searchable combobox: focus clears for searching, blur restores current surah
+  const search = el('surahSearch');
+  search.addEventListener('focus', () => { search.value = ''; });
+  search.addEventListener('blur', () => setPickerLabel());
+  search.addEventListener('change', () => {
+    const v = search.value.trim();
     let s = SURAHS.find((x) => `${x.id}. ${x.name}`.toLowerCase() === v.toLowerCase())
-      || SURAHS.find((x) => x.name.toLowerCase().includes(v.toLowerCase()));
+      || (v && SURAHS.find((x) => x.name.toLowerCase().includes(v.toLowerCase())));
     if (!s && /^\d+$/.test(v)) s = SURAHS.find((x) => x.id === +v);
-    if (s) { e.target.value = ''; openSurah(s.id, false); }
+    if (s) { openSurah(s.id, false); search.blur(); } else { setPickerLabel(); }
   });
   el('playBtn').addEventListener('click', togglePlay);
   el('prevBtn').addEventListener('click', () => goAyah(idx - 1, wantPlaying));
@@ -287,8 +288,7 @@ async function init() {
 
   // initial load from hash (#/s/a[/lang]) or default
   const h = parseHash();
-  const first = parseInt(el('surahSelect').value, 10) || 1;
-  const startSurah = h ? h.surah : first;
+  const startSurah = h ? h.surah : 1;
   await loadSurah(startSurah);
   readHash();
   if (h && h.lang && Array.from(langSel.options).some((o) => o.value === h.lang)) {
