@@ -97,17 +97,20 @@ function setAudio(ay) {
   audio.src = curUrls[0];
   audio.playbackRate = parseFloat(el('speedSelect').value);
 }
-audio.addEventListener('error', () => {
+// Switch to the next CDN (do NOT set currentTime before the new source loads —
+// Firefox throws InvalidStateError on that; each ayah audio starts at 0 anyway).
+function tryNextCdn() {
   if (cdnIdx < curUrls.length - 1) {
     cdnIdx++;
     console.warn('audio CDN failed, trying next:', curUrls[cdnIdx]);
-    const at = audio.currentTime || 0;
     audio.src = curUrls[cdnIdx];
     audio.load();
-    audio.currentTime = at;
     if (wantPlaying) audio.play().catch(() => {});
+    return true;
   }
-});
+  return false;
+}
+audio.addEventListener('error', () => tryNextCdn());
 
 // ---------- render (interlinear: each word is a column Arabic/translit/meaning) ----------
 function renderVerse(words) {
@@ -185,10 +188,21 @@ function tick() {
 // ---------- controls ----------
 function play() {
   wantPlaying = true;
-  audio.play().catch(() => {});
   el('playBtn').textContent = '⏸';
   cancelAnimationFrame(rafId);
   tick();
+  audio.play().catch((err) => {
+    if (err && err.name === 'NotAllowedError') {
+      // browser blocked autoplay (e.g. Firefox strict) — revert; user clicks again / allows audio
+      wantPlaying = false;
+      el('playBtn').textContent = '▶';
+      cancelAnimationFrame(rafId);
+      console.warn('Autoplay blocked by browser — click play again, or allow audio for this site.');
+    } else {
+      // likely a media load/decode error on this CDN → try the next source
+      tryNextCdn();
+    }
+  });
 }
 function pause() {
   wantPlaying = false;
