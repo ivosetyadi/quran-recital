@@ -1,0 +1,106 @@
+<!doctype html>
+<!--
+  Quran Recital — Tajweed Colors PoC
+  Copyright (c) 2026 Ivo Setyadi — MIT License (see LICENSE)
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Tajweed Colors — PoC | Quran Recital</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Amiri+Quran&family=Amiri:wght@700&display=swap" rel="stylesheet" />
+  <style>
+    :root{
+      --grey:#9aa7ad; --silent:#6b7a80;
+      --madd2:#f0a35e; --madd45:#f2b84b; --madd-ob:#ff5d5d; --madd6:#e53935;
+      --ghunnah:#49c46d; --ikhfa:#2bb3c0; --qalqalah:#4a9df0; --iqlab:#b08be0;
+    }
+    *{box-sizing:border-box;margin:0;padding:0}
+    body{min-height:100vh;background:radial-gradient(130% 80% at 50% 12%,#11343f,#0b2630 45%,#061319);background-attachment:fixed;color:#fff;font-family:system-ui,sans-serif;padding:22px 18px 40px}
+    .wrap{max-width:900px;margin:0 auto}
+    .brand{font-size:13px;letter-spacing:1px;color:#9fb9c2;text-transform:uppercase;text-align:center}
+    .note{font-size:12px;color:#8fa8b1;text-align:center;margin:6px 0 20px}
+    .nav{display:flex;gap:8px;justify-content:center;align-items:center;flex-wrap:wrap;margin-bottom:18px}
+    .nav input{width:64px;background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,207,77,.25);border-radius:8px;padding:7px 8px;text-align:center}
+    .nav button{background:rgba(255,255,255,.08);color:#fff;border:1px solid rgba(255,207,77,.25);border-radius:8px;padding:7px 14px;cursor:pointer}
+    .head{text-align:center;color:#9fb9c2;font-size:13px;letter-spacing:2px;text-transform:uppercase;margin-bottom:18px}
+    .ayah{font-family:'Amiri Quran',serif;direction:rtl;text-align:center;font-size:clamp(34px,8vw,60px);line-height:2.1;color:#eaf2f4;padding:10px 4px 26px}
+    .ayah .end{font-size:.6em;color:#ffcf4d;vertical-align:middle}
+
+    /* tajweed rule colors */
+    tajweed.ham_wasl, tajweed.laam_shamsiyah{color:var(--grey)}
+    tajweed.slnt{color:var(--silent)}
+    tajweed.madda_normal{color:var(--madd2)}
+    tajweed.madda_permissible{color:var(--madd45)}
+    tajweed.madda_obligatory{color:var(--madd-ob)}
+    tajweed.madda_necessary{color:var(--madd6)}
+    tajweed.ghunnah, tajweed.idgham_ghunnah{color:var(--ghunnah)}
+    tajweed.idgham_wo_ghunnah{color:var(--grey)}
+    tajweed.ikhafa, tajweed.ikhafa_shafawi{color:var(--ikhfa)}
+    tajweed.qalqalah{color:var(--qalqalah)}
+    tajweed.iqlab, tajweed.idgham_shafawi, tajweed.idgham_mutajanisayn, tajweed.idgham_mutaqaribayn{color:var(--iqlab)}
+
+    .legend{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;margin-top:10px;font-size:13px;color:#cdd9dd}
+    .legend span{display:inline-flex;align-items:center;gap:6px}
+    .dot{width:12px;height:12px;border-radius:3px;display:inline-block}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">Quran Recital · Tajweed Colors (PoC)</div>
+    <div class="note">Letters coloured by tajweed rule — a reading aid. Data: Quran.com.</div>
+    <div class="nav">
+      <button id="prev">◀ prev</button>
+      Surah <input id="s" type="number" min="1" max="114" value="2" />
+      Ayah <input id="a" type="number" min="1" value="255" />
+      <button id="go">Go</button>
+      <button id="next">next ▶</button>
+    </div>
+    <div class="head" id="head"></div>
+    <div class="ayah" id="ayah">…</div>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <script>
+    const el = (id) => document.getElementById(id);
+    const LEGEND = [
+      ['Ghunnah / Idgham', 'var(--ghunnah)'],
+      ['Ikhfa', 'var(--ikhfa)'],
+      ['Qalqalah', 'var(--qalqalah)'],
+      ['Iqlab / Idgham Shafawi', 'var(--iqlab)'],
+      ['Madd 2 (natural)', 'var(--madd2)'],
+      ['Madd 4-5', 'var(--madd45)'],
+      ['Madd obligatory', 'var(--madd-ob)'],
+      ['Madd 6 (necessary)', 'var(--madd6)'],
+      ['Silent / Hamzat wasl / Lam shamsiyyah', 'var(--grey)'],
+    ];
+    function buildLegend() {
+      el('legend').innerHTML = LEGEND.map(([t, c]) => `<span><i class="dot" style="background:${c}"></i>${t}</span>`).join('');
+    }
+    let count = 286;
+    async function show(s, a) {
+      s = Math.min(114, Math.max(1, s)); a = Math.max(1, a);
+      el('ayah').textContent = '…';
+      try {
+        const ch = await (await fetch(`https://api.quran.com/api/v4/chapters/${s}?language=en`)).json();
+        count = ch.chapter.verses_count;
+        if (a > count) a = count;
+        const v = await (await fetch(`https://api.quran.com/api/v4/verses/by_key/${s}:${a}?fields=text_uthmani_tajweed`)).json();
+        el('head').textContent = `${ch.chapter.id} · ${ch.chapter.name_simple} · Verse ${a}`;
+        el('ayah').innerHTML = v.verse.text_uthmani_tajweed || '(no data)';
+        el('s').value = s; el('a').value = a;
+        history.replaceState(null, '', `#/${s}/${a}`);
+      } catch (e) { el('ayah').textContent = 'Failed to load.'; }
+    }
+    function cur() { return [parseInt(el('s').value, 10) || 1, parseInt(el('a').value, 10) || 1]; }
+    el('go').onclick = () => { const [s, a] = cur(); show(s, a); };
+    el('next').onclick = () => { let [s, a] = cur(); a++; if (a > count) { s++; a = 1; } show(s, a); };
+    el('prev').onclick = () => { let [s, a] = cur(); a--; if (a < 1) { s = Math.max(1, s - 1); a = 1; } show(s, a); };
+    buildLegend();
+    const m = location.hash.match(/#\/(\d+)\/(\d+)/);
+    show(m ? +m[1] : 2, m ? +m[2] : 255);
+  </script>
+</body>
+</html>
