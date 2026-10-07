@@ -158,6 +158,7 @@ function readHash() {
 async function openSurah(surahId, autoplay) {
   await loadSurah(surahId);
   renderAyah();
+  updateHash();
   if (autoplay) play();
 }
 
@@ -175,7 +176,11 @@ async function init() {
   audio.addEventListener('ended', () => {
     if (el('repeatAyah').checked) { audio.currentTime = 0; play(); return; }
     pause();
-    if (el('autoAdvance').checked && idx < data.ayat.length - 1) goAyah(idx + 1, true);
+    if (!el('autoAdvance').checked) return;
+    if (idx < data.ayat.length - 1) { goAyah(idx + 1, true); return; }
+    // end of surah → continue into the next surah (1..114)
+    const nextId = data.chapter.id + 1;
+    if (nextId <= 114) openSurah(nextId, true);
   });
 
   // initial surah from hash (#/s/a) or default to first in manifest
