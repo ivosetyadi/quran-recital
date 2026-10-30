@@ -183,7 +183,7 @@ body {
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-.ayah-indicator { font-size: 15px; color: #9fb9c2; min-width: 48px; text-align: center; }
+.ayah-select { min-width: 72px; text-align: center; text-align-last: center; }
 .auto { font-size: 13px; color: #9fb9c2; display: flex; align-items: center; gap: 5px; }
 .speed, .mode { background: rgba(255,255,255,0.06); color: #fff; border: 1px solid rgba(255,207,77,0.25); border-radius: 8px; padding: 6px 8px; }
 

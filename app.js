@@ -168,7 +168,7 @@ function renderAyah() {
   const c = data.chapter;
   el('headerAr').textContent = `${toArabic(c.id)} · ${c.name_arabic} · آية ${toArabic(ay.ayah)}`;
   el('headerEn').textContent = `${c.id} · ${c.name_simple} · Verse ${ay.ayah}`;
-  el('ayahIndicator').textContent = `${ay.ayah}/${c.verses_count}`;
+  syncAyahSelect();
   setCurExtra();
   setCurTaj();
   renderVerse(ay.words);
@@ -236,6 +236,19 @@ function pause() {
 }
 function togglePlay() { audio.paused ? play() : pause(); }
 
+// ayah picker: rebuild options when surah changes, keep selection in sync
+function syncAyahSelect() {
+  const sel = el('ayahSelect');
+  const c = data.chapter;
+  if (sel.dataset.surah !== String(c.id)) {
+    sel.innerHTML = data.ayat
+      .map((a) => `<option value="${a.ayah}">${a.ayah}/${c.verses_count}</option>`)
+      .join('');
+    sel.dataset.surah = String(c.id);
+  }
+  sel.value = String(data.ayat[idx].ayah);
+}
+
 function goAyah(i, autoplay) {
   if (i < 0 || i >= data.ayat.length) return;
   idx = i;
@@ -295,6 +308,10 @@ async function init() {
   el('playBtn').addEventListener('click', togglePlay);
   el('prevBtn').addEventListener('click', () => goAyah(idx - 1, wantPlaying));
   el('nextBtn').addEventListener('click', () => goAyah(idx + 1, wantPlaying));
+  el('ayahSelect').addEventListener('change', () => {
+    const f = data.ayat.findIndex((x) => x.ayah === +el('ayahSelect').value);
+    if (f >= 0) goAyah(f, wantPlaying);
+  });
   el('speedSelect').addEventListener('change', () => {
     audio.playbackRate = parseFloat(el('speedSelect').value);
   });
