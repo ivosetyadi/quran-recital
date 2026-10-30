@@ -58,7 +58,23 @@ body {
   margin-bottom: 28px;
 }
 .brand { font-size: 15px; letter-spacing: 1px; color: #9fb9c2; text-transform: uppercase; }
-.picker { display: flex; gap: 8px; align-items: center; }
+.picker { display: flex; gap: 8px; align-items: center; position: relative; }
+/* custom surah combobox popup (themed; native datalist can't be styled) */
+.combo-pop {
+  position: absolute; top: calc(100% + 6px); right: 0; z-index: 60;
+  min-width: 210px; max-height: 340px; overflow-y: auto;
+  list-style: none; margin: 0; padding: 4px;
+  background: var(--ctrl-bg); border: 1px solid rgba(255,207,77,0.25);
+  border-radius: 10px; box-shadow: 0 10px 28px rgba(0,0,0,0.5);
+  scrollbar-width: thin; scrollbar-color: #1c4a57 #081d24;
+}
+.combo-pop::-webkit-scrollbar { width: 10px; }
+.combo-pop::-webkit-scrollbar-track { background: #081d24; }
+.combo-pop::-webkit-scrollbar-thumb { background: #1c4a57; border-radius: 6px; }
+.combo-pop li { padding: 7px 10px; border-radius: 6px; cursor: pointer; white-space: nowrap; color: #fff; font-size: 14px; }
+.combo-pop li.active, .combo-pop li:hover { background: rgba(255,207,77,0.15); }
+.combo-pop li[aria-selected="true"] { color: var(--gold); }
+.combo-pop li.empty { color: #6d868f; cursor: default; }
 .surah-search {
   background: var(--ctrl-bg);
   color: #fff;

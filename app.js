@@ -75,12 +75,46 @@ let SURAHS = []; // [{id,name}] from manifest
 
 async function loadManifest() {
   SURAHS = await (await fetch('data/manifest.json')).json();
-  const dl = el('surahList');
-  dl.innerHTML = '';
-  SURAHS.forEach((s) => {
-    const d = document.createElement('option');
-    d.value = `${s.id}. ${s.name}`;
-    dl.appendChild(d);
+}
+
+// custom searchable surah combobox (themed popup; native datalist can't be styled)
+function initSurahCombo() {
+  const search = el('surahSearch');
+  const box = el('surahListbox');
+  let filtered = [], activeIdx = -1;
+
+  const open = () => { box.hidden = false; search.setAttribute('aria-expanded', 'true'); };
+  const close = () => { box.hidden = true; search.setAttribute('aria-expanded', 'false'); activeIdx = -1; };
+
+  function render(q) {
+    const t = q.trim().toLowerCase();
+    filtered = !t ? SURAHS.slice()
+      : SURAHS.filter((s) => s.name.toLowerCase().includes(t) || String(s.id).startsWith(t));
+    box.innerHTML = filtered.length
+      ? filtered.map((s) => `<li role="option" data-id="${s.id}"${data && s.id === data.chapter.id ? ' aria-selected="true"' : ''}>${s.id}. ${s.name}</li>`).join('')
+      : '<li class="empty" aria-disabled="true">no match</li>';
+    activeIdx = -1;
+  }
+  const choose = (id) => { close(); openSurah(id, false); search.blur(); };
+
+  search.addEventListener('focus', () => { search.value = ''; render(''); open(); });
+  search.addEventListener('input', () => { render(search.value); open(); });
+  search.addEventListener('blur', () => { setTimeout(() => { close(); setPickerLabel(); }, 150); });
+  search.addEventListener('keydown', (e) => {
+    if (box.hidden) return;
+    const items = [...box.querySelectorAll('li[data-id]')];
+    if (e.key === 'ArrowDown') { e.preventDefault(); activeIdx = Math.min(activeIdx + 1, items.length - 1); }
+    else if (e.key === 'ArrowUp') { e.preventDefault(); activeIdx = Math.max(activeIdx - 1, 0); }
+    else if (e.key === 'Enter') { e.preventDefault(); const pick = activeIdx >= 0 ? items[activeIdx] : items[0]; if (pick) choose(+pick.dataset.id); return; }
+    else if (e.key === 'Escape') { close(); search.blur(); return; }
+    else return;
+    items.forEach((li, i) => li.classList.toggle('active', i === activeIdx));
+    if (items[activeIdx]) items[activeIdx].scrollIntoView({ block: 'nearest' });
+  });
+  // mousedown (fires before blur) so the click registers before the input closes
+  box.addEventListener('mousedown', (e) => {
+    const li = e.target.closest('li[data-id]');
+    if (li) { e.preventDefault(); choose(+li.dataset.id); }
   });
 }
 
@@ -294,17 +328,7 @@ async function openSurah(surahId, autoplay) {
 async function init() {
   await loadManifest();
 
-  // single searchable combobox: focus clears for searching, blur restores current surah
-  const search = el('surahSearch');
-  search.addEventListener('focus', () => { search.value = ''; });
-  search.addEventListener('blur', () => setPickerLabel());
-  search.addEventListener('change', () => {
-    const v = search.value.trim();
-    let s = SURAHS.find((x) => `${x.id}. ${x.name}`.toLowerCase() === v.toLowerCase())
-      || (v && SURAHS.find((x) => x.name.toLowerCase().includes(v.toLowerCase())));
-    if (!s && /^\d+$/.test(v)) s = SURAHS.find((x) => x.id === +v);
-    if (s) { openSurah(s.id, false); search.blur(); } else { setPickerLabel(); }
-  });
+  initSurahCombo();
   el('playBtn').addEventListener('click', togglePlay);
   el('prevBtn').addEventListener('click', () => goAyah(idx - 1, wantPlaying));
   el('nextBtn').addEventListener('click', () => goAyah(idx + 1, wantPlaying));

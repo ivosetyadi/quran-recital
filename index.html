@@ -20,8 +20,8 @@
     <div class="topbar">
       <div class="brand">Quran Recital · Slow Step</div>
       <div class="picker">
-        <input id="surahSearch" class="surah-search" list="surahList" placeholder="Surah…" aria-label="Choose surah" autocomplete="off" />
-        <datalist id="surahList"></datalist>
+        <input id="surahSearch" class="surah-search" placeholder="Surah…" aria-label="Choose surah" autocomplete="off" role="combobox" aria-expanded="false" aria-controls="surahListbox" aria-autocomplete="list" />
+        <ul id="surahListbox" class="combo-pop" role="listbox" hidden></ul>
       </div>
     </div>
     <p class="tagline">Recited <strong>slowly</strong>, word by word — Arabic, transliteration &amp; meaning in sync. For beginners &amp; memorization.</p>
