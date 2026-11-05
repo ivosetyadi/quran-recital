@@ -209,6 +209,15 @@ body {
 @keyframes spin { to { transform: rotate(360deg); } }
 
 .ayah-select { min-width: 72px; text-align: center; text-align-last: center; }
+
+/* subtle visitor counter → links to stats page */
+.visit-counter {
+  position: fixed; left: 12px; bottom: 10px; z-index: 40;
+  font-size: 12px; color: #52707b; text-decoration: none; opacity: 0.55;
+  display: inline-flex; align-items: center; gap: 4px;
+  transition: opacity .2s, color .2s;
+}
+.visit-counter:hover { opacity: 1; color: var(--gold); }
 .auto { font-size: 13px; color: #9fb9c2; display: flex; align-items: center; gap: 5px; }
 .speed, .mode { background: var(--ctrl-bg); color: #fff; border: 1px solid rgba(255,207,77,0.25); border-radius: 8px; padding: 6px 8px; }
 

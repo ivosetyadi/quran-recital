@@ -409,6 +409,24 @@ async function init() {
     try { await loadTajweed(startSurah); } catch {}
   }
   renderAyah();
+  initCounter();
+}
+
+// subtle visitor counter: increments once per browser session, else shows cached total
+const COUNTER_API = 'https://qr-counter.ivosetyadi.workers.dev';
+async function initCounter() {
+  const span = el('visitCount');
+  try {
+    let total = sessionStorage.getItem('qr_total');
+    if (!sessionStorage.getItem('qr_hit')) {
+      const r = await fetch(`${COUNTER_API}/hit?p=${encodeURIComponent(location.hash || '/')}`);
+      const d = await r.json();
+      total = d.total;
+      sessionStorage.setItem('qr_hit', '1');
+      sessionStorage.setItem('qr_total', String(total));
+    }
+    if (total != null && span) span.textContent = Number(total).toLocaleString();
+  } catch { if (span) span.textContent = '·'; }
 }
 
 document.addEventListener('DOMContentLoaded', init);
