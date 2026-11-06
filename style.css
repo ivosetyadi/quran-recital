@@ -218,6 +218,12 @@ body {
   transition: opacity .2s, color .2s;
 }
 .visit-counter:hover { opacity: 1; color: var(--gold); }
+.repo-link {
+  position: fixed; right: 12px; bottom: 10px; z-index: 40;
+  font-size: 12px; color: #52707b; text-decoration: none; opacity: 0.55;
+  transition: opacity .2s, color .2s;
+}
+.repo-link:hover { opacity: 1; color: var(--gold); }
 .auto { font-size: 13px; color: #9fb9c2; display: flex; align-items: center; gap: 5px; }
 .speed, .mode { background: var(--ctrl-bg); color: #fff; border: 1px solid rgba(255,207,77,0.25); border-radius: 8px; padding: 6px 8px; }
 
